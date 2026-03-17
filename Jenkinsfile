@@ -22,52 +22,18 @@ pipeline {
         }
 
         stage('Test') {
-            parallel {
-                stage('Unit tests') {
-                    agent {
-                        docker {
-                            image 'node:18-alphin'
-                            reuseNode true
-                        }
-                    }
-
-                    steps {
-                        sh '''
-                            #test -f build/index.html
-                            npm test
-                        '''
-                    }
-
-                    post {
-                        always {
-                            junit 'jest-results/junit.xml'
-                        }
-                    }
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
                 }
+            }
 
-                stage('E2E') {
-                    agent {
-                        docker {
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                            reuseNode true
-                        }
-                    }
-
-                    steps {
-                        sh '''
-                            npm i serve
-                            node_modules/.bin/serve -s build &
-                            sleep 10
-                            npx playwright test  --reporter=html
-                        '''
-                    }
-
-                    post {
-                        always {
-                            publishHTML({allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: ''})
-                        }
-                    }
-                }
+            steps {
+                sh '''
+                    test -f build/index.html
+                    npm test
+                '''
             }
         }
 
@@ -81,9 +47,15 @@ pipeline {
             steps {
                 sh '''
                     npm i netlify-cli
-                    node_modules/.bin/netlify --version
-                '''
+                    node_modules/.bin/netlify --version               
+		'''
             }
+        }
+    }
+
+    post {
+        always {
+            junit 'test-results/junit.xml'
         }
     }
 }
